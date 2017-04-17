@@ -61,12 +61,267 @@
 
     <li class="apidocModuleLi"><a href="#apidoc.module.gulp-combine-media-queries">module gulp-combine-media-queries</a><ol>
 
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.gulp-combine-media-queries.gulp-combine-media-queries">
+            function <span class="apidocSignatureSpan"></span>gulp-combine-media-queries
+            <span class="apidocSignatureSpan">(options)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.gulp-combine-media-queries.toString">
+            function <span class="apidocSignatureSpan">gulp-combine-media-queries.</span>toString
+            <span class="apidocSignatureSpan">()</span>
+            </a>
+
+        </li>
+
+    </ol></li>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.gulp-combine-media-queries.toString">module gulp-combine-media-queries.toString</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.gulp-combine-media-queries.toString.toString">
+            function <span class="apidocSignatureSpan">gulp-combine-media-queries.</span>toString
+            <span class="apidocSignatureSpan">()</span>
+            </a>
+
+        </li>
+
     </ol></li>
 
 </ol></div>
 
 <div class="apidocSectionDiv">
 <h1><a href="#apidoc.module.gulp-combine-media-queries" id="apidoc.module.gulp-combine-media-queries">module gulp-combine-media-queries</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.gulp-combine-media-queries.gulp-combine-media-queries" id="apidoc.element.gulp-combine-media-queries.gulp-combine-media-queries">
+        function <span class="apidocSignatureSpan"></span>gulp-combine-media-queries
+        <span class="apidocSignatureSpan">(options)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">gulp-combine-media-queries = function (options) {
+  &#x27;use strict&#x27;;
+
+  // Default options
+  var options = defaults(options || {}, {
+    log: false,
+    ext: false,
+    use_external: false
+  });
+
+  // Log info only when &#x27;options.log&#x27; is set to true
+  var log = function(message) {
+    if (options.log) {
+      gutil.log(message);
+    }
+  };
+
+  // Process Imports
+  var processImport = function(cssImport) {
+    var strCss = &#x27;@import &#x27; + cssImport.import + &#x27;;&#x27; + &#x27;\n\n&#x27;;
+    return strCss;
+  };
+
+  // Process comments
+  var processComment = function(comment) {
+    var strCss = &#x27;/*&#x27; + comment.comment + &#x27;*/&#x27;;
+    return strCss;
+  };
+
+  // Process declaration
+  var processDeclaration = function(declaration) {
+    var strCss = declaration.property + &#x27;: &#x27; + declaration.value + &#x27;;&#x27;;
+    return strCss;
+  };
+
+  // Check declarations type
+  var commentOrDeclaration = function(declarations) {
+    var strCss = &#x27;&#x27;;
+    if (declarations.type === &#x27;declaration&#x27;) {
+      strCss += &#x27;\n\t&#x27; + processDeclaration(declarations);
+    } else if (declarations.type === &#x27;comment&#x27;) {
+      strCss += &#x27; &#x27; + processComment(declarations);
+    }
+    return strCss;
+  };
+
+  // Process normal CSS rule
+  var processRule = function(rule) {
+    var strCss = &#x27;&#x27;;
+    strCss += rule.selectors.join(&#x27;,\n&#x27;) + &#x27; {&#x27;;
+    rule.declarations.forEach(function(rules) {
+      strCss += commentOrDeclaration(rules);
+    });
+    strCss += &#x27;\n}\n\n&#x27;;
+    return strCss;
+  };
+
+  // Check rule type
+  var commentOrRule = function(rule) {
+    var strCss = &#x27;&#x27;;
+    if (rule.type === &#x27;rule&#x27;) {
+      strCss += processRule(rule);
+    } else if (rule.type === &#x27;comment&#x27;) {
+      strCss += processComment(rule) + &#x27;\n\n&#x27;;
+    }
+    return strCss;
+  };
+
+  // Check keyframe type
+  var commentOrKeyframe = function(frame) {
+    var strCss = &#x27;&#x27;;
+    if (frame.type === &#x27;keyframe&#x27;) {
+      strCss += frame.values.join(&#x27;,&#x27;) + &#x27; {&#x27;;
+      frame.declarations.forEach(function(declaration) {
+        strCss += commentOrDeclaration(declaration);
+      });
+      strCss += &#x27;\n}\n\n&#x27;;
+    } else if (frame.type === &#x27;comment&#x27;) {
+      strCss += processComment(frame) + &#x27;\n\n&#x27;;
+    }
+    return strCss;
+  };
+
+  // Process media queries
+  var processMedia = function(media) {
+    var strCss = &#x27;&#x27;;
+    strCss += &#x27;@media &#x27; + media.rule + &#x27; {\n\n&#x27;;
+    media.rules.forEach(function(rule) {
+      strCss += commentOrRule(rule);
+    });
+    strCss += &#x27;}\n\n&#x27;;
+    log(&#x27;  @media &#x27; + media.rule);
+
+    return strCss;
+  };
+
+  // Process keyframes
+  var processKeyframes = function(key) {
+    var strCss = &#x27;&#x27;;
+    strCss += &#x27;@&#x27; + (typeof key.vendor !== &#x27;undefined&#x27; ? key.vendor : &#x27;&#x27;) + &#x27;keyframes &#x27; + key.name + &#x27; {\n\n&#x27;;
+    key.keyframes.forEach(function(keyframe) {
+      strCss += commentOrKeyframe(keyframe);
+    });
+    strCss += &#x27;}\n\n&#x27;;
+
+    return strCss;
+  };
+
+  function transform(file, enc, cb) {
+
+    if (file.isNull()) {
+      this.push(file);
+      return cb();
+    }
+
+    if (file.isStream()) {
+      this.emit(&#x27;error&#x27;, new PluginError(PLUGIN_NAME, &#x27;Streaming not supported&#x27;));
+      return cb();
+    }
+
+    var filename = path.relative(file.cwd, file.path);
+    var extFilename = filename.replace(&#x27;.css&#x27;, &#x27;.responsive.css&#x27;);
+    var source = file.contents.toString(&#x27;utf8&#x27;);
+    var cssJson = parseCss(source);
+    var strStyles = [];
+    var strMediaStyles = [];
+    var processedCSS = {};
+
+    log(&#x27;File &#x27; + filename + &#x27; found.&#x27;);
+
+    processedCSS.imports = [];
+    processedCSS.base = [];
+    processedCSS.media = [];
+    processedCSS.media.all = [];
+    processedCSS.media.minWidth = [];
+    processedCSS.media.maxWidth = [];
+    processedCSS.media.minHeight = [];
+    processedCSS.media.maxHeight = [];
+    processedCSS.media.print = [];
+    processedCSS.media.blank = [];
+    processedCSS.keyframes = [];
+
+    file.contents = new Buffer(cssJson);
+
+    // For every rule in the stylesheet...
+    cssJson.stylesheet.rules.forEach(function(rule) {
+
+      // If the rule type is an import
+      if(rule.type === &#x27;import&#x27;) { ...</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.gulp-combine-media-queries.toString" id="apidoc.element.gulp-combine-media-queries.toString">
+        function <span class="apidocSignatureSpan">gulp-combine-media-queries.</span>toString
+        <span class="apidocSignatureSpan">()</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">toString = function () {
+    return text;
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+if (file.isStream()) {
+  this.emit(&#x27;error&#x27;, new PluginError(PLUGIN_NAME, &#x27;Streaming not supported&#x27;));
+  return cb();
+}
+
+var filename = path.relative(file.cwd, file.path);
+var extFilename = filename.replace(&#x27;.css&#x27;, &#x27;.responsive.css&#x27;);
+var source = file.contents.<span class="apidocCodeKeywordSpan">toString</span>(&#x27;utf8&#x27;);
+var cssJson = parseCss(source);
+var strStyles = [];
+var strMediaStyles = [];
+var processedCSS = {};
+
+log(&#x27;File &#x27; + filename + &#x27; found.&#x27;);
+...</pre></li>
+    </ul>
+
+
+</div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.gulp-combine-media-queries.toString" id="apidoc.module.gulp-combine-media-queries.toString">module gulp-combine-media-queries.toString</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.gulp-combine-media-queries.toString.toString" id="apidoc.element.gulp-combine-media-queries.toString.toString">
+        function <span class="apidocSignatureSpan">gulp-combine-media-queries.</span>toString
+        <span class="apidocSignatureSpan">()</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">function toString() { [native code] }</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+if (file.isStream()) {
+  this.emit(&#x27;error&#x27;, new PluginError(PLUGIN_NAME, &#x27;Streaming not supported&#x27;));
+  return cb();
+}
+
+var filename = path.relative(file.cwd, file.path);
+var extFilename = filename.replace(&#x27;.css&#x27;, &#x27;.responsive.css&#x27;);
+var source = file.contents.<span class="apidocCodeKeywordSpan">toString</span>(&#x27;utf8&#x27;);
+var cssJson = parseCss(source);
+var strStyles = [];
+var strMediaStyles = [];
+var processedCSS = {};
+
+log(&#x27;File &#x27; + filename + &#x27; found.&#x27;);
+...</pre></li>
+    </ul>
+
 
 </div>
 
